@@ -1,3 +1,4 @@
+/* eslint-disable no-unused-vars */
 import React from "react";
 import { generatePath } from "react-router";
 import { Text } from "@adobe/react-spectrum";
