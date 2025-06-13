@@ -1,18 +1,3 @@
-/*
-* <license header>
-*/
-
-/**
- * This is a sample action showcasing how to access an external API
- *
- * Note:
- * You might want to disable authentication and authorization checks against Adobe Identity Management System for a generic action. In that case:
- *   - Remove the require-adobe-auth annotation for this action in the manifest.yml of your application
- *   - Remove the Authorization header from the array passed in checkMissingRequestInputs
- *   - The two steps above imply that every client knowing the URL to this deployed action will be able to invoke it without any authentication and authorization checks against Adobe Identity Management System
- *   - Make sure to validate these changes against your security requirements before deploying the action
- */
-
 
 const fetch = require('node-fetch')
 const { Core } = require('@adobe/aio-sdk')
@@ -31,7 +16,7 @@ async function main (params) {
     logger.debug(stringParameters(params))
 
     // check for missing request input parameters and headers
-    const requiredParams = [/* add required params */]
+    const requiredParams = [ 'aemHost', 'fragmentIds', 'propertyName', 'propertyValue' ]
     const requiredHeaders = ['Authorization']
     const errorMessage = checkMissingRequestInputs(params, requiredParams, requiredHeaders)
     if (errorMessage) {
@@ -39,25 +24,53 @@ async function main (params) {
       return errorResponse(400, errorMessage, logger)
     }
 
-    // extract the user Bearer token from the Authorization header
-    const token = getBearerToken(params)
+    const body = {
+      "properties": {
+        "elements": {
+          [params.propertyName]: {
+            "value": params.propertyValue
+          }
+        }
+      }
+    };
 
-    // replace this with the api you want to access
-    const apiEndpoint = `${params.API_ENDPOINT}`
-    // fetch content from external api endpoint
-    const res = await fetch(apiEndpoint)
-    if (!res.ok) {
-      throw new Error('request to ' + apiEndpoint + ' failed with status code ' + res.status)
-    }
-    const content = await res.json()
+    // Extract the user Bearer token from the Authorization header used to authenticate the request to AEM
+    const accessToken = getBearerToken(params);
+
+    logger.info(`Hellow WORLD!!!! awaiting promises!!!: ${accessToken}`);
+
+    let results = await Promise.all(params.fragmentIds.map(async (fragmentId) => {
+
+      logger.info(`Updating fragment ${fragmentId} with property ${params.propertyName} and value ${params.propertyValue}`);
+
+      const res = await fetch(`${params.aemHost}${fragmentId.replace('/content/dam/', '/api/assets/')}.json`, {
+        method: 'put',
+        body: JSON.stringify(body),
+        headers: {
+          'Authorization': `Bearer ${accessToken}`,
+          'Content-Type': 'application/json'
+        }
+      });
+
+      if (res.ok) {
+        logger.info(`Successfully updated ${fragmentId}`);
+        return { fragmentId, status: res.status, statusText: res.statusText, body: await res.json() };
+      } else {
+        logger.info(`Failed to update ${fragmentId}`);
+        return { fragmentId, status: res.status, statusText: res.statusText, body: await res.text() };
+      }
+    }));
+
     const response = {
       statusCode: 200,
-      body: content
-    }
+      body: results
+    };
 
-    // log the response status code
-    logger.info(`${response.statusCode}: successful request`)
-    return response
+    logger.info('Adobe I/O Runtime action response', response);
+
+    // Return the response to the A
+     return response;
+
   } catch (error) {
     // log any server errors
     logger.error(error)

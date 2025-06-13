@@ -19,7 +19,7 @@ function App() {
             element={<ExtensionRegistration />} 
           />
           <Route
-            exact path="content-fragment/:fragmentId/bulk-property-update-modal"
+            exact path="content-fragment/:selection/bulk-property-update"
             element={<BulkpropertyupdateModal />}
           />
           // YOUR CUSTOM ROUTES SHOULD BE HERE
