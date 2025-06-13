@@ -1,0 +1,18 @@
+{
+  "name": "Bulk property update",
+  "id": "bulk-property-update",
+  "description": " An example action bar extension that bulk updates a single property one or more content fragments.",
+  "version": "0.0.1",
+  "actionBarButtons": [
+    {
+      "label": "Bulk property update",
+      "needsModal": true,
+      "id": "bulk-property-update"
+    }
+  ],
+  "runtimeActions": [
+    {
+      "name": "generic"
+    }
+  ]
+}
