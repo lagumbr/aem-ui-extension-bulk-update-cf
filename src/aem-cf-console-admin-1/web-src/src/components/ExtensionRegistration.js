@@ -59,6 +59,11 @@ function ExtensionRegistration() {
                     id: "export-candidate-profiles",
                     label: "Export candidate profiles",
                     onClick: async () => {
+                      guestConnection.host.toaster.display({
+                        variant: "info",
+                        message: "Downloading candidate profiles...",
+                      });
+
                       // Set the HTTP headers to access the Adobe I/O runtime action
                       const headers = {
                         Authorization:
@@ -72,7 +77,9 @@ function ExtensionRegistration() {
 
                       // Set the parameters to pass to the Adobe I/O Runtime action
                       const params = {
-                        aemHost: `https://${guestConnection.sharedContext.get('aemHost')}`,
+                        aemHost: `https://${guestConnection.sharedContext.get(
+                          "aemHost"
+                        )}`,
                         contentFragmentPath:
                           "/content/dam/elections/candidates-cf",
                       };
@@ -81,16 +88,53 @@ function ExtensionRegistration() {
                       const action = "export";
 
                       try {
+                        guestConnection.host.progressCircle.start();
                         // Invoke Adobe I/O Runtime action with the configured headers and parameters
-                        const actionResponse = await actionWebInvoke(
+                        const presignedUrl = await actionWebInvoke(
                           allActions[action],
                           headers,
                           params
                         );
-                        console.log(`Response from ${action}: ${JSON.stringify(actionResponse.formattedContentFragments)}`);
+
+                        // Download the file using the returned URL
+                        if (presignedUrl) {
+                          console.log(`Downloading from: ${presignedUrl}`);
+
+                          const link = document.createElement("a");
+                          link.href = presignedUrl;
+                          link.download = ""; // Let the browser decide the filename
+                          link.target = "_blank"; // Open in new tab
+                          document.body.appendChild(link);
+                          link.click();
+                          document.body.removeChild(link);
+
+                          guestConnection.host.toaster.display({
+                            variant: "positive",
+                            message: "Your download is ready.",
+                            timeout: 120000
+                          });
+                        } else {
+                          guestConnection.host.toaster.display({
+                            variant: "negative",
+                            message:
+                              "Error occurred while downloading candidate profiles.",
+                          });
+
+                          console.error(
+                            "No download URL found in actionResponse."
+                          );
+                        }
                       } catch (e) {
+                        guestConnection.host.toaster.display({
+                          variant: "negative",
+                          message:
+                            "Error occurred while downloading candidate profiles.",
+                        });
+
                         // Log and store any errors
                         console.error(e);
+                      } finally {
+                        guestConnection.host.progressCircle.stop();
                       }
                     },
                   },
