@@ -1,10 +1,9 @@
 import { generatePath } from "react-router";
-import { Text } from "@adobe/react-spectrum";
 import { register } from "@adobe/uix-guest";
 import { extensionId } from "./Constants";
 import actionWebInvoke from "../utils";
 
- import allActions from '../config.json'
+import allActions from "../config.json";
 
 function ExtensionRegistration() {
   const init = async () => {
@@ -72,7 +71,11 @@ function ExtensionRegistration() {
                       console.log("headers", headers);
 
                       // Set the parameters to pass to the Adobe I/O Runtime action
-                      const params = {};
+                      const params = {
+                        aemHost: `https://${guestConnection.sharedContext.get('aemHost')}`,
+                        contentFragmentPath:
+                          "/content/dam/elections/candidates-cf",
+                      };
 
                       // Invoke the Adobe I/O Runtime action named `generic`. This name defined in the `ext.config.yaml` file.
                       const action = "export";
@@ -84,8 +87,7 @@ function ExtensionRegistration() {
                           headers,
                           params
                         );
-
-                         console.log(`Response from ${action}:`, actionResponse);
+                        console.log(`Response from ${action}: ${JSON.stringify(actionResponse.formattedContentFragments)}`);
                       } catch (e) {
                         // Log and store any errors
                         console.error(e);

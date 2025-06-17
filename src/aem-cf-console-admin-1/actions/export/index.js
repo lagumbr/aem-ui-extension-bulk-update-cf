@@ -1,3 +1,5 @@
+
+
 const fetch = require("node-fetch");
 const { Core } = require("@adobe/aio-sdk");
 const {
@@ -6,6 +8,7 @@ const {
   stringParameters,
   checkMissingRequestInputs,
 } = require("../utils");
+const { fetchAllContentFragments, processContentFragments } = require("./helper");
 
 // main function that will be executed by Adobe I/O Runtime
 async function main(params) {
@@ -20,7 +23,7 @@ async function main(params) {
     logger.debug(stringParameters(params));
 
     // check for missing request input parameters and headers
-    const requiredParams = [];
+    const requiredParams = ["contentFragmentPath","aemHost"];
     const requiredHeaders = ["Authorization"];
     const errorMessage = checkMissingRequestInputs(
       params,
@@ -36,6 +39,16 @@ async function main(params) {
     const accessToken = getBearerToken(params);
 
     //1 query all content fragments with specific model
+    const allContentFragments = await fetchAllContentFragments(
+      accessToken,
+      params.contentFragmentPath,
+      params.aemHost,
+      logger
+    );
+
+    const formattedContentFragments = processContentFragments(allContentFragments);
+
+    logger.info(`formattedContentFragments first element: ${JSON.stringify(formattedContentFragments[0])}`);
 
     //2 create a csv file in aio storage
 
@@ -43,12 +56,10 @@ async function main(params) {
 
     const response = {
       statusCode: 200,
-      body: { test: "Hello World!" },
+      body: formattedContentFragments,
     };
 
-    logger.info(`Adobe I/O Runtime action response ${JSON.stringify(response)}`);
 
-    // Return the response to the A
     return response;
   } catch (error) {
     // log any server errors
