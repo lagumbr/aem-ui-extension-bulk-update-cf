@@ -1,6 +1,4 @@
-
-
-const fetch = require("node-fetch");
+const filesLib = require("@adobe/aio-lib-files");
 const { Core } = require("@adobe/aio-sdk");
 const {
   errorResponse,
@@ -8,7 +6,10 @@ const {
   stringParameters,
   checkMissingRequestInputs,
 } = require("../utils");
-const { fetchAllContentFragments, processContentFragments } = require("./helper");
+const {
+  fetchAllContentFragments,
+  processContentFragments,
+} = require("./helper");
 
 // main function that will be executed by Adobe I/O Runtime
 async function main(params) {
@@ -23,7 +24,7 @@ async function main(params) {
     logger.debug(stringParameters(params));
 
     // check for missing request input parameters and headers
-    const requiredParams = ["contentFragmentPath","aemHost"];
+    const requiredParams = ["contentFragmentPath", "aemHost"];
     const requiredHeaders = ["Authorization"];
     const errorMessage = checkMissingRequestInputs(
       params,
@@ -46,9 +47,34 @@ async function main(params) {
       logger
     );
 
-    const formattedContentFragments = processContentFragments(allContentFragments);
+    const formattedContentFragments =
+      processContentFragments(allContentFragments);
 
-    logger.info(`formattedContentFragments first element: ${JSON.stringify(formattedContentFragments[0])}`);
+    const files = await filesLib.init();
+    const header = "email,position,location,aemCandidateContentFormId,status\n";
+    const rows = formattedContentFragments.map((item) =>
+      [
+        item.email,
+        item.position,
+        item.location,
+        item.aemCandidateContentFormId,
+        item.status,
+      ]
+        .map((val) => `"${val}"`)
+        .join(",")
+    );
+
+    const csvContent = header + rows.join("\n");
+    const filePath = "private/candidates.csv";
+
+    // Upload the CSV
+    await files.write(filePath, csvContent);
+
+    // Generate a presigned URL (valid for 5 minutes)
+    const presignUrl = await files.generatePresignURL(filePath, {
+      expiryInSeconds: 300, // 5 minutes
+      permissions: "r", // read-only
+    });
 
     //2 create a csv file in aio storage
 
@@ -56,9 +82,8 @@ async function main(params) {
 
     const response = {
       statusCode: 200,
-      body: formattedContentFragments,
+      body: presignUrl,
     };
-
 
     return response;
   } catch (error) {
