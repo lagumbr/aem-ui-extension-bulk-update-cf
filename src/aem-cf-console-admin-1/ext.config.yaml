@@ -21,3 +21,13 @@ runtimeManifest:
           annotations:
             require-adobe-auth: false
             final: true
+        export:
+          function: actions/export/index.js
+          web: 'yes'
+          runtime: nodejs:16
+          inputs:
+            LOG_LEVEL: debug
+            API_ENDPOINT: $API_ENDPOINT
+          annotations:
+            require-adobe-auth: false
+            final: true

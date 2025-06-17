@@ -1,9 +1,10 @@
-/* eslint-disable no-unused-vars */
-import React from "react";
 import { generatePath } from "react-router";
 import { Text } from "@adobe/react-spectrum";
 import { register } from "@adobe/uix-guest";
 import { extensionId } from "./Constants";
+import actionWebInvoke from "../utils";
+
+ import allActions from '../config.json'
 
 function ExtensionRegistration() {
   const init = async () => {
@@ -43,6 +44,55 @@ function ExtensionRegistration() {
                     url: modalURL,
                   });
                 },
+              },
+            ];
+          },
+        },
+        headerMenu: {
+          async getButtons() {
+            return [
+              {
+                id: "my.company.export-button",
+                label: "Export",
+                icon: "Export",
+                subItems: [
+                  {
+                    id: "export-candidate-profiles",
+                    label: "Export candidate profiles",
+                    onClick: async () => {
+                      // Set the HTTP headers to access the Adobe I/O runtime action
+                      const headers = {
+                        Authorization:
+                          "Bearer " +
+                          guestConnection.sharedContext.get("auth").imsToken,
+                        "x-gw-ims-org-id":
+                          guestConnection.sharedContext.get("auth").imsOrg,
+                      };
+
+                      console.log("headers", headers);
+
+                      // Set the parameters to pass to the Adobe I/O Runtime action
+                      const params = {};
+
+                      // Invoke the Adobe I/O Runtime action named `generic`. This name defined in the `ext.config.yaml` file.
+                      const action = "export";
+
+                      try {
+                        // Invoke Adobe I/O Runtime action with the configured headers and parameters
+                        const actionResponse = await actionWebInvoke(
+                          allActions[action],
+                          headers,
+                          params
+                        );
+
+                         console.log(`Response from ${action}:`, actionResponse);
+                      } catch (e) {
+                        // Log and store any errors
+                        console.error(e);
+                      }
+                    },
+                  },
+                ],
               },
             ];
           },
